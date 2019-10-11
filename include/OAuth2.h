@@ -32,7 +32,7 @@ public:
     OAuth2(std::string const& clientId, std::string const& clientSecret);
 
     std::string generateAuthorizationURL(std::string const& endpoint, std::string const& requestedScope) const;
-    // void setAuthorizationCode(std::string const& code) {m_authorizationCode = code;}
+    void setAuthorizationCode(std::string const& code) {m_authorizationCode = code;}
     // std::pair<std::string const&, std::string const&> getTokens(void) const;
     // void getResource(std::string const& endpoint) const;
 };
