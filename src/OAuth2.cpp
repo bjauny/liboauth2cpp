@@ -36,3 +36,19 @@ std::string OAuth2::generateAuthorizationURL(std::string const& endpoint, std::s
 
     return fullURL;
 }
+
+std::string OAuth2::getTokenRequestPostFields() const {
+    std::string postFields("code=");
+
+    postFields += m_authorizationCode;
+    postFields += "&client_id=";
+    postFields += m_clientId;
+    postFields += "&client_secret=";
+    postFields += m_clientSecret;
+    postFields += "&redirect_uri=";
+    postFields += m_redirectUri;
+    postFields += "&grant_type=authorization_code";
+    postFields += "&access_type=offline";
+
+    return postFields;
+}
