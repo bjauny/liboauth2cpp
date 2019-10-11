@@ -30,5 +30,10 @@ int main(int argc, char** argv) {
     std::cout << "Please visit the following URL to continue:" << std::endl;
     std::cout << authorizationURL << std::endl;
 
+    std::string authorizationCode;
+    std::cout << "Enter the code granted:" << std::endl;
+    std::cin >> authorizationCode;
+    oauth2Manager.setAuthorizationCode(authorizationCode);
+
     return 0;
 }

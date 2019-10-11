@@ -15,7 +15,3 @@ target_include_directories(oauth2cpp PRIVATE .)
 install(TARGETS oauth2cpp
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-set(demo_sources demo/swcombine.cpp)
-add_executable(swcombine_demo ${demo_sources})
-target_link_libraries(swcombine_demo oauth2cpp)
