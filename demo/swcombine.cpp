@@ -13,8 +13,41 @@
 // You should have received a copy of the GNU General Public License
 // along with liboauth2cpp.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <curl/curl.h>
 #include <iostream>
 #include <OAuth2.h>
+
+static std::pair<std::string const&, std::string const&> getTokens(oauth2::OAuth2 const& manager) {
+	curl_global_init(CURL_GLOBAL_ALL);
+
+	CURL *curl(curl_easy_init());
+	if (curl) {
+		curl_easy_setopt(curl, CURLOPT_URL, "http://www.swcombine.com/ws/oauth2/token/");
+		// curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeTokens);
+		// curl_easy_setopt(curl, CURLOPT_WRITEDATA, &m_curlData);
+
+		struct curl_slist *headers = NULL;
+		headers = curl_slist_append(headers, "Expect:");
+		headers = curl_slist_append(headers, "Accept: application/json");
+		headers = curl_slist_append(headers, "Transfer-Encoding: chunked");
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+		std::string postFields(manager.getTokenRequestPostFields());
+
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
+
+		CURLcode result(curl_easy_perform(curl));
+		if (CURLE_OK != result) {
+			std::cerr << "curl call failed: " << curl_easy_strerror(result) << std::endl;
+		}
+
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+	}
+
+	curl_global_cleanup();
+	return {"", ""};
+}
 
 int main(int argc, char** argv) {
     std::cout << "SWCombine OAuth2 demo using liboauth2cpp" << std::endl;
