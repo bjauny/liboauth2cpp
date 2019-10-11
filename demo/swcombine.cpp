@@ -14,8 +14,23 @@
 // along with liboauth2cpp.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <curl/curl.h>
+#include <iomanip>
 #include <iostream>
 #include <OAuth2.h>
+
+#include "json.hpp"
+
+std::string curlString("");
+
+static size_t writeTokens(void *buffer, size_t size, size_t nmemb, void *userp) {
+	const char* serializedData = reinterpret_cast<char *>(buffer);
+    std::string err;
+    nlohmann::json content(nlohmann::json::parse(serializedData));
+
+    std::cout << std::setw(4) << content;
+
+	return size * nmemb;
+}
 
 static std::pair<std::string const&, std::string const&> getTokens(oauth2::OAuth2 const& manager) {
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -23,8 +38,8 @@ static std::pair<std::string const&, std::string const&> getTokens(oauth2::OAuth
 	CURL *curl(curl_easy_init());
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "http://www.swcombine.com/ws/oauth2/token/");
-		// curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeTokens);
-		// curl_easy_setopt(curl, CURLOPT_WRITEDATA, &m_curlData);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeTokens);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlString);
 
 		struct curl_slist *headers = NULL;
 		headers = curl_slist_append(headers, "Expect:");
