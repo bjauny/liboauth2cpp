@@ -20,26 +20,35 @@
 
 #include "json.hpp"
 
-std::string curlString("");
+nlohmann::json returnedJson;
 
 static size_t writeTokens(void *buffer, size_t size, size_t nmemb, void *userp) {
-	const char* serializedData = reinterpret_cast<char *>(buffer);
-    std::string err;
-    nlohmann::json content(nlohmann::json::parse(serializedData));
+	const char* serializedData(reinterpret_cast<char *>(buffer));
+    nlohmann::json *jsonData(reinterpret_cast<nlohmann::json *>(userp));
 
-    std::cout << std::setw(4) << content;
+    *jsonData = nlohmann::json::parse(serializedData);
 
 	return size * nmemb;
 }
 
-static std::pair<std::string const&, std::string const&> getTokens(oauth2::OAuth2 const& manager) {
+static size_t getRemoteResource(void *buffer, size_t size, size_t nmemb, void *userp) {
+	const char* serializedData(reinterpret_cast<char *>(buffer));
+    nlohmann::json *jsonData(reinterpret_cast<nlohmann::json *>(userp));
+
+    *jsonData = nlohmann::json::parse(serializedData);
+
+	return size * nmemb;
+}
+
+static std::pair<std::string, std::string> getTokens(oauth2::OAuth2 const& manager) {
 	curl_global_init(CURL_GLOBAL_ALL);
+    std::pair<std::string, std::string> tokens("", "");
 
 	CURL *curl(curl_easy_init());
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "http://www.swcombine.com/ws/oauth2/token/");
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeTokens);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlString);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &returnedJson);
 
 		struct curl_slist *headers = NULL;
 		headers = curl_slist_append(headers, "Expect:");
@@ -61,7 +70,38 @@ static std::pair<std::string const&, std::string const&> getTokens(oauth2::OAuth
 	}
 
 	curl_global_cleanup();
-	return {"", ""};
+
+    if ((returnedJson.find("access_token") != returnedJson.end()) &&
+        (returnedJson.find("refresh_token") != returnedJson.end())) {
+        tokens.first = returnedJson["access_token"];
+        tokens.second = returnedJson["refresh_token"];
+    }
+
+	return tokens;
+}
+
+static nlohmann::json getResourceFromString(std::string const& resourceURL) {
+    nlohmann::json resourceData;
+    curl_global_init(CURL_GLOBAL_ALL);
+
+    std::cout << resourceURL << std::endl;
+    CURL *curl(curl_easy_init());
+	if (curl) {
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        curl_easy_setopt(curl, CURLOPT_URL, resourceURL);
+		//curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, getRemoteResource);
+		//curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resourceData);
+
+        CURLcode result(curl_easy_perform(curl));
+		if (CURLE_OK != result) {
+			std::cerr << "curl call failed: " << curl_easy_strerror(result) << std::endl;
+		}
+
+		curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+    return resourceData;
 }
 
 int main(int argc, char** argv) {
@@ -82,6 +122,18 @@ int main(int argc, char** argv) {
     std::cout << "Enter the code granted:" << std::endl;
     std::cin >> authorizationCode;
     oauth2Manager.setAuthorizationCode(authorizationCode);
+
+    auto const oauth2Tokens(getTokens(oauth2Manager));
+
+    oauth2Manager.setAccessToken(oauth2Tokens.first);
+    //oauth2Manager.setRefreshToken(oauth2Tokens.second);
+
+    std::cout << oauth2Tokens.first << std::endl;
+    std::string const resourceEndpoint("http://www.swcombine.com/ws/v1.0/helloauth/");
+    auto const getCharacterURL(oauth2Manager.generateResourceURL(resourceEndpoint));
+
+    auto const characterInfo(getResourceFromString(getCharacterURL));
+    std::cout << characterInfo << std::endl;;
 
     return 0;
 }

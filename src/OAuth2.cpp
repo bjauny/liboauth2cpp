@@ -22,7 +22,8 @@ OAuth2::OAuth2(std::string const& clientId, std::string const& clientSecret) :
     m_clientId(clientId),
     m_clientSecret(clientSecret),
     m_redirectUri("urn:ietf:wg:oauth:2.0:oob"),
-    m_authorizationCode("") {
+    m_authorizationCode(""),
+    m_accessToken("") {
 }
 
 std::string OAuth2::generateAuthorizationURL(std::string const& endpoint, std::string const& requestedScope) const {
@@ -33,6 +34,14 @@ std::string OAuth2::generateAuthorizationURL(std::string const& endpoint, std::s
     fullURL += "&redirect_uri=" + m_redirectUri;
     fullURL += "&scope=" + requestedScope;
     fullURL += "&access_type=offline";
+
+    return fullURL;
+}
+
+std::string OAuth2::generateResourceURL(std::string const& endpoint) {
+    std::string fullURL(endpoint);
+
+    fullURL += "?access_token=" + m_accessToken;
 
     return fullURL;
 }

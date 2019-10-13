@@ -27,12 +27,15 @@ private:
     std::string m_clientSecret;
     std::string m_redirectUri;
     std::string m_authorizationCode;
+    std::string m_accessToken;
 
 public:
     OAuth2(std::string const& clientId, std::string const& clientSecret);
 
     std::string generateAuthorizationURL(std::string const& endpoint, std::string const& requestedScope) const;
+    std::string generateResourceURL(std::string const& endpoint);
     void setAuthorizationCode(std::string const& code) {m_authorizationCode = code;}
+    void setAccessToken(std::string const& token) {m_accessToken = token;}
     std::string getTokenRequestPostFields() const;
 };
 
